@@ -13,6 +13,7 @@ contract ReAMMERC20 is IERC20 {
     mapping(address => uint) public balanceOf;
     mapping(address => mapping(address => uint)) public allowance;
 
+    
     function _mint(address to, uint256 value) internal {
         totalSupply = totalSupply + value;
         balanceOf[to] = balanceOf[to]+value;
