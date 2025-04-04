@@ -31,7 +31,7 @@ contract ReHookTest is Test, Deployers {
 
 
         address impl = address(new ReHook(manager));
-        address hookAddr = address(uint160(Hooks.BEFORE_SWAP_FLAG | Hooks.BEFORE_SWAP_RETURNS_DELTA_FLAG));
+        address hookAddr = address(uint160(Hooks.BEFORE_INITIALIZE_FLAG | Hooks.BEFORE_SWAP_FLAG | Hooks.BEFORE_SWAP_RETURNS_DELTA_FLAG));
         _etchHookAndInitPool(hookAddr, impl);
         console2.log("hookAddr", hookAddr);
 
