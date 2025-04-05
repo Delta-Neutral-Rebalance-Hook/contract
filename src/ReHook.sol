@@ -63,26 +63,22 @@ contract ReHook is BaseTestHooks {
 
     function updateAddressWeight(address sender, uint256 timestamp, uint256 updateValue0, uint256 updateValue1, bool ADD) internal returns(uint256, uint256) {
         if(recordsCurrency0[sender].timestamp == 0) {
-            Data storage data0 = recordsCurrency0[sender];
-            data0.timestamp = timestamp;
-            data0.value += updateValue0;
-            Data storage data1 = recordsCurrency1[sender];
-            data1.timestamp = timestamp;
-            data1.value += updateValue1;
+            recordsCurrency0[sender].timestamp = timestamp;
+            recordsCurrency0[sender].value = updateValue0;
+            recordsCurrency1[sender].timestamp = timestamp;
+            recordsCurrency1[sender].value = updateValue1;
             return(0, 0);
         } else {
-            Data storage data0 = recordsCurrency0[sender];
-            Data storage data1 = recordsCurrency1[sender];
-            uint256 reward0 = data0.value*(timestamp - data0.timestamp);
-            uint256 reward1 = data1.value*(timestamp - data1.timestamp);
-            data0.timestamp = timestamp;
-            data1.timestamp = timestamp;
+            uint256 reward0 = recordsCurrency0[sender].value * (timestamp - recordsCurrency0[sender].timestamp);
+            uint256 reward1 = recordsCurrency1[sender].value * (timestamp - recordsCurrency1[sender].timestamp);
+            recordsCurrency0[sender].timestamp = timestamp;
+            recordsCurrency1[sender].timestamp = timestamp;
             if(ADD) {
-                data0.value += updateValue0;
-                data1.value += updateValue1;
+                recordsCurrency0[sender].value += updateValue0;
+                recordsCurrency0[sender].value += updateValue1;
             } else {
-                data0.value -= updateValue0;
-                data1.value -= updateValue1;
+                recordsCurrency0[sender].value -= updateValue0;
+                recordsCurrency0[sender].value -= updateValue1;
             }
             return(reward0, reward1);
         }
@@ -174,8 +170,7 @@ contract ReHook is BaseTestHooks {
     function _getInputOutputAndAmount(PoolKey calldata key, IPoolManager.SwapParams calldata params)
         internal
         pure
-        returns (Currency input, Currency output, uint256 amount)
-    {
+        returns (Currency input, Currency output, uint256 amount){
         (input, output) = params.zeroForOne ? (key.currency0, key.currency1) : (key.currency1, key.currency0);
 
         amount = params.amountSpecified < 0 ? uint256(-params.amountSpecified) : uint256(params.amountSpecified);

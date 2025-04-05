@@ -60,70 +60,73 @@ contract ReHookTest is Test, Deployers {
         adduser();
         
         // test1 for adding liquidity
-        IPoolManager.ModifyLiquidityParams memory AL1params = IPoolManager.ModifyLiquidityParams({
+        IPoolManager.ModifyLiquidityParams memory AL1params = IPoolManager.ModifyLiquidityParams({ // 1e18
             tickLower: TickMath.MIN_TICK,
             tickUpper: TickMath.MAX_TICK,
             liquidityDelta: 1e18,
             salt: 0
         });
         // test2 for adding liquidity
-        IPoolManager.ModifyLiquidityParams memory AL2params = IPoolManager.ModifyLiquidityParams({
+        IPoolManager.ModifyLiquidityParams memory AL2params = IPoolManager.ModifyLiquidityParams({ // 7*1e17
             tickLower: TickMath.MIN_TICK,
             tickUpper: TickMath.MAX_TICK,
             liquidityDelta: 7*1e17,
             salt: 0
         });
         // test3 for adding liquidity
-        IPoolManager.ModifyLiquidityParams memory AL3params = IPoolManager.ModifyLiquidityParams({
+        IPoolManager.ModifyLiquidityParams memory AL3params = IPoolManager.ModifyLiquidityParams({ // 5*1e17
             tickLower: TickMath.MIN_TICK,
             tickUpper: TickMath.MAX_TICK,
             liquidityDelta: 5*1e17,
             salt: 0
         });
         // test4 for adding liquidity
-        IPoolManager.ModifyLiquidityParams memory AL4params = IPoolManager.ModifyLiquidityParams({
+        IPoolManager.ModifyLiquidityParams memory AL4params = IPoolManager.ModifyLiquidityParams({ // 6*1e5
             tickLower: TickMath.MIN_TICK,
             tickUpper: TickMath.MAX_TICK,
             liquidityDelta: 6*1e5,
             salt: 0
         });
-        // test1 for beforeSwap
 
+        // test1 for beforeSwap
         IPoolManager.SwapParams memory SW1params = IPoolManager.SwapParams({
             zeroForOne: false,
-            amountSpecified: 1e10,
+            amountSpecified: 1e3,
             sqrtPriceLimitX96: false ? MIN_PRICE_LIMIT : MAX_PRICE_LIMIT
         });
-         // test2 for beforeSwap
-
+        // test2 for beforeSwap
         IPoolManager.SwapParams memory SW2params = IPoolManager.SwapParams({
             zeroForOne: true,
-            amountSpecified: 1e11,
+            amountSpecified: 1e5,
             sqrtPriceLimitX96: true ? MIN_PRICE_LIMIT : MAX_PRICE_LIMIT
         });
+
         vm.startPrank(user1);
         bytes32 message = keccak256(abi.encode(key));
         userPrivateKey = 1;
         (uint8 v, bytes32 r, bytes32 s) = vm.sign(userPrivateKey, message);
         bytes memory signature = abi.encodePacked(bytes32(r), bytes32(s), uint8(v));
         bytes memory hookData = signature;
+        printlog();
         modifyLiquidityRouter.modifyLiquidity(key, AL1params, hookData, false, true);
         swapRouter.swap(key, SW2params, _defaultTestSettings(), ZERO_BYTES);
-        vm.warp(block.timestamp + 1 days);
+        vm.warp(block.timestamp + 1 hours);
+        printlog();
         swapRouter.swap(key, SW1params, _defaultTestSettings(), ZERO_BYTES);
+        printlog();
 
         // do some swaps
         for(int256 i = 1; i < 10; i++) {
             vm.warp(block.timestamp + 1 hours);
             IPoolManager.SwapParams memory SWparams = IPoolManager.SwapParams({
                 zeroForOne: true,
-                amountSpecified: i*1e11,
+                amountSpecified: i*1e5,
                 sqrtPriceLimitX96: true ? MIN_PRICE_LIMIT : MAX_PRICE_LIMIT
             });
             swapRouter.swap(key, SWparams, _defaultTestSettings(), ZERO_BYTES);
         }
         // checek the hook balance
-        assertEq(MockERC20(Currency.unwrap(key.currency0)).balanceOf(hook), 46*1e9); // 46 = 1+1+2+3+4+5+6+7+8+9
+        assertEq(MockERC20(Currency.unwrap(key.currency0)).balanceOf(hook), 46*1e3); // 46 = 1+1+2+3+4+5+6+7+8+9
         vm.stopPrank();
 
         vm.startPrank(user2);
@@ -131,45 +134,29 @@ contract ReHookTest is Test, Deployers {
         (v, r, s) = vm.sign(userPrivateKey, message);
         signature = abi.encodePacked(bytes32(r), bytes32(s), uint8(v));
         hookData = signature;
-        vm.warp(block.timestamp + 1 days);
+        vm.warp(block.timestamp + 2 hours);
+        printlog();
         modifyLiquidityRouter.modifyLiquidity(key, AL1params, hookData, false, true);
-        vm.warp(block.timestamp + 1 days);
-
+        vm.warp(block.timestamp + 3 hours);
+        printlog();
         uint256 hookBalanceBeforeClaim0 = MockERC20(Currency.unwrap(key.currency0)).balanceOf(hook);
         uint256 hookBalanceBeforeClaim1 = MockERC20(Currency.unwrap(key.currency1)).balanceOf(hook);
+        vm.warp(block.timestamp + 4 hours);
+        printlog();
         modifyLiquidityRouter.modifyLiquidity(key, AL1params, hookData, false, true);
         uint256 hookBalanceAfterClaim0 = MockERC20(Currency.unwrap(key.currency0)).balanceOf(hook);
         uint256 hookBalanceAfterClaim1 = MockERC20(Currency.unwrap(key.currency1)).balanceOf(hook);
-        // check the hook balance for giving bonus fee
+        vm.warp(block.timestamp + 5 hours);
+        printlog();
         assertGt(hookBalanceBeforeClaim0, hookBalanceAfterClaim0);
         assertGt(hookBalanceBeforeClaim1, hookBalanceAfterClaim1);
-        vm.warp(block.timestamp + 1 days);
+        vm.warp(block.timestamp + 6 hours);
         swapRouter.swap(key, SW2params, _defaultTestSettings(), ZERO_BYTES);
         swapRouter.swap(key, SW2params, _defaultTestSettings(), ZERO_BYTES);
-        vm.warp(block.timestamp + 1 days);
+        vm.warp(block.timestamp + 7 hours);
         
-
         vm.stopPrank();
 
-
-        
-        // modifyLiquidityRouter.modifyLiquidity(key, params, hookData, false, true);
-
-
-        // bool zeroForOne = false;
-        // uint256 amountToSwap = 1e4;
-        // int256 amountSpecified = int256(amountToSwap);
-        // // key.currency0.transfer(address(hook), 10e18);
-        // // key.currency1.transfer(address(hook), 10e18);
-        // console2.log("Before swap");
-        // console2.log("user balance", MockERC20(Currency.unwrap(key.currency0)).balanceOf(user));
-        // console2.log("user balance", MockERC20(Currency.unwrap(key.currency1)).balanceOf(user));
-        // console2.log("hook balance", MockERC20(Currency.unwrap(key.currency0)).balanceOf(hook));
-        // console2.log("hook balance", MockERC20(Currency.unwrap(key.currency1)).balanceOf(hook));
-        // console2.log("user:", user);
-        // // console2.log("After swap);
-        // console2.log("user balance", MockERC20(Currency.unwrap(key.currency0)).balanceOf(user));
-        // console2.log("user balance", MockERC20(Currency.unwrap(key.currency1)).balanceOf(user));
         console2.log("hook balance", MockERC20(Currency.unwrap(key.currency0)).balanceOf(hook));
         console2.log("hook balance", MockERC20(Currency.unwrap(key.currency1)).balanceOf(hook));
     }
@@ -197,5 +184,12 @@ contract ReHookTest is Test, Deployers {
             vm.prank(_user);
             MockERC20(token).approve(toApprove[i], Constants.MAX_UINT256);
         }
+    }
+
+    function printlog() internal {
+        console2.log("time: ", block.timestamp);
+        console2.log("hook 0: ", MockERC20(Currency.unwrap(key.currency0)).balanceOf(hook));
+        console2.log("hook 1: ", MockERC20(Currency.unwrap(key.currency1)).balanceOf(hook));
+        console2.log("-----------");
     }
 }
