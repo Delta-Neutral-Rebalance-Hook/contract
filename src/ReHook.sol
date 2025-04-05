@@ -22,25 +22,25 @@ contract ReHook is BaseTestHooks {
     using Hooks for IHooks;
     using CurrencySettler for Currency;
 
-    // address user = address(0xBEEF);
     struct Data {
         uint256 timestamp;
         uint256 value;
     }
     mapping(address => Data) public recordsCurrency0;
     mapping(address => Data) public recordsCurrency1;
+
     uint256 public lastTimestamp; // last update timestamp
+
     uint256 public totalWeightCurrency0; // total Currency0 weight
     uint256 public totalWeightCurrency1; // total Currency1 weight
 
     uint256 public totalValueCurrency0; // total Currency0 liquidity value
     uint256 public totalValueCurrency1; // total Currency1 liquidity value
 
-    
-    function updateTotalWeight(uint256 timestamp, uint256 updateValue0, uint256 updateValue1, bool Add) internal {
-        totalWeightCurrency0 += totalValueCurrency0*(timestamp - lastTimestamp);
-        totalWeightCurrency1 += totalValueCurrency1*(timestamp - lastTimestamp);
-        if(Add){
+    function updateTotalWeight(uint256 timestamp, uint256 updateValue0, uint256 updateValue1, bool ADD) internal {
+        totalWeightCurrency0 += totalValueCurrency0 * (timestamp - lastTimestamp);
+        totalWeightCurrency1 += totalValueCurrency1 * (timestamp - lastTimestamp);
+        if(ADD) {
             totalValueCurrency0 += updateValue0;
             totalValueCurrency1 += updateValue1;
         } else {
@@ -49,8 +49,8 @@ contract ReHook is BaseTestHooks {
         }
         lastTimestamp = timestamp;
     }
-    // address[] public keys;
-    function updateAddressWeight(address sender, uint256 timestamp, uint256 updateValue0, uint256 updateValue1, bool ADD) internal returns(uint256, uint256){
+
+    function updateAddressWeight(address sender, uint256 timestamp, uint256 updateValue0, uint256 updateValue1, bool ADD) internal returns(uint256, uint256) {
         if(recordsCurrency0[sender].timestamp == 0) {
             Data storage data0 = recordsCurrency0[sender];
             data0.timestamp = timestamp;
@@ -59,14 +59,14 @@ contract ReHook is BaseTestHooks {
             data1.timestamp = timestamp;
             data1.value += updateValue1;
             return(0, 0);
-        }else{
+        } else {
             Data storage data0 = recordsCurrency0[sender];
             Data storage data1 = recordsCurrency1[sender];
             uint256 reward0 = data0.value*(timestamp - data0.timestamp);
             uint256 reward1 = data1.value*(timestamp - data1.timestamp);
             data0.timestamp = timestamp;
             data1.timestamp = timestamp;
-            if(ADD){
+            if(ADD) {
                 data0.value += updateValue0;
                 data1.value += updateValue1;
             } else {
@@ -98,16 +98,8 @@ contract ReHook is BaseTestHooks {
 
         manager.take(inputCurrency, address(this), amount/100);// manager transfer to hook
 
-        // outputCurrency.settle(manager, address(this), amount, false);// hook transfer to manager
-
         BeforeSwapDelta hookDelta = toBeforeSwapDelta(0, int128(params.amountSpecified/100));
-
-        // uint256 amount0 = MockERC20(Currency.unwrap(key.currency0)).balanceOf(address(manager));
-        // uint256 amount1 = MockERC20(Currency.unwrap(key.currency1)).balanceOf(address(manager));
-
-
         return (IHooks.beforeSwap.selector, hookDelta, 0);
-        // return (IHooks.beforeSwap.selector, BeforeSwapDeltaLibrary.ZERO_DELTA, 0);
     }
     function beforeInitialize(
         address sender, 
