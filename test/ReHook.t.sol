@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: UNLICENSED
-pragma solidity ^0.8.20;
+pragma solidity ^0.8.26;
 
 import {Test} from "forge-std/Test.sol";
 import {Deployers} from "v4-core/test/utils/Deployers.sol";
@@ -27,67 +27,63 @@ contract ReHookTest is Test, Deployers {
     function setUp() public {
         initializeManagerRoutersAndPoolsWithLiq(IHooks(address(0)));
 
-
-
-        
     }
 
     function testRehook() public {
 
 
         address impl = address(new ReHook(manager));
-        address hookAddr = address(uint160(Hooks.BEFORE_INITIALIZE_FLAG | Hooks.BEFORE_SWAP_FLAG | Hooks.BEFORE_SWAP_RETURNS_DELTA_FLAG));
+        address hookAddr = address(uint160(Hooks.AFTER_ADD_LIQUIDITY_RETURNS_DELTA_FLAG|Hooks.AFTER_ADD_LIQUIDITY_FLAG|Hooks.BEFORE_INITIALIZE_FLAG | Hooks.BEFORE_SWAP_FLAG | Hooks.BEFORE_SWAP_RETURNS_DELTA_FLAG));
         _etchHookAndInitPool(hookAddr, impl);
         console2.log("hookAddr", hookAddr);
+        console2.log("impl", impl);
+        console2.log("manager", address(manager));
 
 
         // test for beforeAddLiquidity
-        IPoolManager.ModifyLiquidityParams memory params = IPoolManager.ModifyLiquidityParams({
-            tickLower: TickMath.MIN_TICK,
-            tickUpper: TickMath.MAX_TICK,
-            liquidityDelta: 1e15,
-            salt: 0
-        });
+        // IPoolManager.ModifyLiquidityParams memory params = IPoolManager.ModifyLiquidityParams({
+        //     tickLower: TickMath.MIN_TICK,
+        //     tickUpper: TickMath.MAX_TICK,
+        //     liquidityDelta: 1e18,
+        //     salt: 0
+        // });
 
         // test for beforeSwap
 
-        // bool zeroForOne = false;
-        // uint256 amountToSwap = 1e6;
-        // int256 amountSpecified = int256(amountToSwap);
+        bool zeroForOne = false;
+        uint256 amountToSwap = 1e6;
+        int256 amountSpecified = int256(amountToSwap);
 
-        // IPoolManager.SwapParams memory params = IPoolManager.SwapParams({
-        //     zeroForOne: zeroForOne,
-        //     amountSpecified: amountSpecified,
-        //     // Note: if zeroForOne is true, the price is pushed down, otherwise its pushed up.
-        //     sqrtPriceLimitX96: zeroForOne ? MIN_PRICE_LIMIT : MAX_PRICE_LIMIT
-        // });
-
-        
-
+        IPoolManager.SwapParams memory params = IPoolManager.SwapParams({
+            zeroForOne: zeroForOne,
+            amountSpecified: amountSpecified,
+            sqrtPriceLimitX96: zeroForOne ? MIN_PRICE_LIMIT : MAX_PRICE_LIMIT
+        });
 
         _setApprovalsFor(user, address(Currency.unwrap(key.currency0)));
         _setApprovalsFor(user, address(Currency.unwrap(key.currency1)));
 
-        // Seeds liquidity into the hook.
-        // key.currency0.transfer(address(hook), 10e18);
-        // key.currency1.transfer(address(hook), 10e18);
-
-        // Seeds liquidity into the user.
-
         key.currency0.transfer(address(user), 10e18);
         key.currency1.transfer(address(user), 10e18);
-
         key.currency0.transfer(address(hook), 10e18);
         key.currency1.transfer(address(hook), 10e18);
-
-        vm.startPrank(user);
-        // swapRouter.swap(key, params, _defaultTestSettings(), ZERO_BYTES);
-        modifyLiquidityRouter.modifyLiquidity(key, params, ZERO_BYTES);
-        vm.stopPrank();
+        console2.log("Before swap");
         console2.log("user balance", MockERC20(Currency.unwrap(key.currency0)).balanceOf(user));
         console2.log("user balance", MockERC20(Currency.unwrap(key.currency1)).balanceOf(user));
-        console2.log("pool balance", MockERC20(Currency.unwrap(key.currency0)).balanceOf(address(manager)));
-        console2.log("pool balance", MockERC20(Currency.unwrap(key.currency1)).balanceOf(address(manager)));
+        console2.log("hook balance", MockERC20(Currency.unwrap(key.currency0)).balanceOf(hook));
+        console2.log("hook balance", MockERC20(Currency.unwrap(key.currency1)).balanceOf(hook));
+
+        vm.startPrank(user);
+        console2.log("user:", user);
+        swapRouter.swap(key, params, _defaultTestSettings(), ZERO_BYTES);
+
+        // modifyLiquidityRouter.modifyLiquidity(key, params, ZERO_BYTES, false, true);
+
+        vm.stopPrank();
+
+        // console2.log("After swap);
+        console2.log("user balance", MockERC20(Currency.unwrap(key.currency0)).balanceOf(user));
+        console2.log("user balance", MockERC20(Currency.unwrap(key.currency1)).balanceOf(user));
         console2.log("hook balance", MockERC20(Currency.unwrap(key.currency0)).balanceOf(hook));
         console2.log("hook balance", MockERC20(Currency.unwrap(key.currency1)).balanceOf(hook));
     }

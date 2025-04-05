@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: UNLICENSED
+// SPDX-License-Identifier: MIT
 pragma solidity ^0.8.26;
 
 import {Test} from "forge-std/Test.sol";
@@ -29,8 +29,12 @@ contract ReHookTest is Test {
         vm.startPrank(user);
         IERC20(weth).approve(address(amm), 10 ether);
         IERC20(usdc).approve(address(amm), 1e11);
+        console2.log("add liquidity");
         amm.addliquidity(10 ether, 1e11);
         console2.log("user balance of LP token", IERC20(amm).balanceOf(user));
+        console2.log("weth reserve", amm.reserve0());
+        console2.log("usdc reserve", amm.reserve1());
+
         // console2.log("ReAMM deployed at:", address(amm));
         vm.stopPrank();
 

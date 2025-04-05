@@ -20,6 +20,41 @@ contract ReHook is BaseTestHooks {
     using Hooks for IHooks;
     using CurrencySettler for Currency;
 
+    struct Data {
+        uint256 timestamp;
+        uint256 value;
+    }
+    mapping(address => Data) public records;
+    uint256 public lastTimestamp; // last update timestamp
+    uint256 public totalWeight; // total weight
+    uint256 public totalValue; // total liquidity value
+    
+    function updateTotalWeight(uint256 timestamp, uint256 updateValue, bool Add) external {
+        totalWeight += totalValue*(timestamp - lastTimestamp);
+        if(Add){
+            totalValue += updateValue;
+        } else {
+            totalValue -= updateValue;
+        }
+        lastTimestamp = timestamp;
+    }
+    // address[] public keys;
+    function updateAddressWeight(address sender, uint256 timestamp, uint256 updateValue) external returns(uint256){
+        if(records[sender].timestamp == 0) {
+            Data storage data = records[sender];
+            data.timestamp = timestamp;
+            data.value += updateValue;
+            lastTimestamp = timestamp;
+            return(0);
+        }else{
+            Data storage data = records[sender];
+            data.timestamp = timestamp;
+            data.value = updateValue;
+            return(data.value*(timestamp - data.timestamp));
+        }
+    }
+
+
     IPoolManager immutable manager;
 
     constructor(IPoolManager _manager) {
@@ -36,17 +71,17 @@ contract ReHook is BaseTestHooks {
         IPoolManager.SwapParams calldata params,
         bytes calldata /* hookData **/
     ) external override onlyPoolManager returns (bytes4, BeforeSwapDelta, uint24) {
-
+        
         (Currency inputCurrency, Currency outputCurrency, uint256 amount) = _getInputOutputAndAmount(key, params);
 
-        manager.take(inputCurrency, address(this), amount);// manager transfer to hook
+        manager.take(inputCurrency, address(this), amount/100);// manager transfer to hook
 
-        outputCurrency.settle(manager, address(this), amount, false);// hook transfer to manager
+        // outputCurrency.settle(manager, address(this), amount, false);// hook transfer to manager
 
-        BeforeSwapDelta hookDelta = toBeforeSwapDelta(int128(-params.amountSpecified), int128(params.amountSpecified));
+        BeforeSwapDelta hookDelta = toBeforeSwapDelta(0, int128(params.amountSpecified/100));
 
-        uint256 amount0 = MockERC20(Currency.unwrap(key.currency0)).balanceOf(address(manager));
-        uint256 amount1 = MockERC20(Currency.unwrap(key.currency1)).balanceOf(address(manager));
+        // uint256 amount0 = MockERC20(Currency.unwrap(key.currency0)).balanceOf(address(manager));
+        // uint256 amount1 = MockERC20(Currency.unwrap(key.currency1)).balanceOf(address(manager));
 
 
         return (IHooks.beforeSwap.selector, hookDelta, 0);
@@ -54,28 +89,10 @@ contract ReHook is BaseTestHooks {
     }
     function beforeInitialize(
         address sender, 
-        PoolKey calldata key, 
+        PoolKey calldata key,
         uint160 sqrtPriceX96
     ) external override onlyPoolManager returns (bytes4)
     {
-        // PoolId poolId = key.toId();
-
-        // string memory tokenSymbol = string(
-        //     abi.encodePacked(
-        //         "UniV4-REBALANCE",
-        //         "-",
-        //         IERC20Metadata(Currency.unwrap(key.currency0)).symbol(),
-        //         "-",
-        //         IERC20Metadata(Currency.unwrap(key.currency1)).symbol(),
-        //         "-",
-        //         Strings.toString(uint256(key.fee))
-        //     )
-        // );
-        // address poolToken = address(new ReERC20(tokenSymbol, tokenSymbol));
-
-        // liquidityToken = poolToken;
-        // console2.log("liquidityToken", liquidityToken);
-
         return IHooks.beforeInitialize.selector;
     }
     function beforeRemoveLiquidity(
@@ -87,31 +104,16 @@ contract ReHook is BaseTestHooks {
         return IHooks.beforeRemoveLiquidity.selector;
     }
     function afterAddLiquidity(
-        address, /* sender **/
+        address sender, /* sender **/
         PoolKey calldata key, /* key **/
         IPoolManager.ModifyLiquidityParams calldata params, /* params **/
         BalanceDelta, /* delta **/
         BalanceDelta, /* feeDelta **/
         bytes calldata /* hookData **/
     ) external override returns (bytes4, BalanceDelta) {
-        uint256 amount0 = MockERC20(Currency.unwrap(key.currency0)).balanceOf(address(manager));
-        uint256 amount1 = MockERC20(Currency.unwrap(key.currency1)).balanceOf(address(manager));
-        // int128 amount00 = 0+amount0;
-        // int128 amount11 = 0+amount1;
+        console2.log("sender", sender);
         BalanceDelta hookDelta;
-        if(amount0 > 0 && amount1 > 0) {
-            manager.take(key.currency0, address(this), amount0);
-            manager.take(key.currency1, address(this), amount1);
-            hookDelta = toBalanceDelta(int128(uint128(amount0)), int128(uint128(amount1)));
-        }
-        else{
-            hookDelta = BalanceDeltaLibrary.ZERO_DELTA;
-        }
-
-
-        // manager.take(key.currency0, address(this), uint256(params.liquidityDelta/1e5));
-        // manager.take(key.currency1, address(this), uint256(params.liquidityDelta/1e5));
-
+        hookDelta = BalanceDeltaLibrary.ZERO_DELTA;
         console2.log("hi");
         return (IHooks.afterAddLiquidity.selector, hookDelta);
     }

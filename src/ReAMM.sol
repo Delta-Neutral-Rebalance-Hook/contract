@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: UNLICENSED
+// SPDX-License-Identifier: MIT
 pragma solidity ^0.8.26;
 
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
@@ -21,8 +21,9 @@ contract ReAMM is ReAMMERC20 {
     }
     uint256 public constant MINIMUM_LIQUIDITY = 1000;
     // all liquidity (100%)
-    uint256 private reserve0;
-    uint256 private reserve1;
+    uint256 public reserve0;
+    uint256 public reserve1;
+    uint256 private L;
     // liquidity in the pool (38%)
     uint256 private reserve0inPool;          
     uint256 private reserve1inPool;
@@ -48,8 +49,6 @@ contract ReAMM is ReAMMERC20 {
         int256 amount0 = int256(reserve0inPool)-int256(reserve0*RATIO/100);
         int256 amount1 = int256(reserve1inPool)-int256(reserve1*RATIO/100);
         
-
-
         // after rebalance
         reserve0inPool = IERC20(token0).balanceOf(address(this));
         reserve0inPool = IERC20(token1).balanceOf(address(this));
@@ -85,6 +84,8 @@ contract ReAMM is ReAMMERC20 {
 
         reserve0inPool = uint256(balance0);
         reserve1inPool = uint256(balance1);
+        reserve0 = reserve0inPool;
+        reserve1 = reserve1inPool;
     }
     function burn(address to) internal lock returns (uint amount0, uint amount1) {
         uint256 balance0 = IERC20(token0).balanceOf(address(this));
