@@ -47,7 +47,7 @@ contract ReHook is BaseTestHooks {
         require(msg.sender == address(manager));
         _;
     }
-
+    // calculate the total weight of the pool for distribution of bonus fee
     function updateTotalWeight(uint256 timestamp, uint256 updateValue0, uint256 updateValue1, bool ADD) internal {
         totalWeightCurrency0 += totalValueCurrency0 * (timestamp - lastTimestamp);
         totalWeightCurrency1 += totalValueCurrency1 * (timestamp - lastTimestamp);
@@ -60,7 +60,7 @@ contract ReHook is BaseTestHooks {
         }
         lastTimestamp = timestamp;
     }
-
+    // calculate the total weight of the pool for distribution of bonus fee
     function updateAddressWeight(address sender, uint256 timestamp, uint256 updateValue0, uint256 updateValue1, bool ADD) internal returns(uint256, uint256) {
         if(recordsCurrency0[sender].timestamp == 0) {
             recordsCurrency0[sender].timestamp = timestamp;
@@ -83,7 +83,7 @@ contract ReHook is BaseTestHooks {
             return(reward0, reward1);
         }
     }
-
+    // beforeSwap hook for getting the bonus fee
     function beforeSwap(
         address, /* sender **/
         PoolKey calldata key,
@@ -98,7 +98,7 @@ contract ReHook is BaseTestHooks {
         BeforeSwapDelta hookDelta = toBeforeSwapDelta(0, int128(params.amountSpecified/100));
         return (IHooks.beforeSwap.selector, hookDelta, 0);
     }
-
+    // afterAddLiquidity hook for getting the LP value and timestamp
     function afterAddLiquidity(
         address sender, /* sender **/
         PoolKey calldata key, /* key **/
@@ -132,6 +132,7 @@ contract ReHook is BaseTestHooks {
 
         return (IHooks.afterAddLiquidity.selector, BalanceDeltaLibrary.ZERO_DELTA);
     }
+    // afterRemoveLiquidity hook for distributing the bonus fee
     function afterRemoveLiquidity(
         address, /* sender **/
         PoolKey calldata key, /* key **/
