@@ -39,8 +39,8 @@ Deployed on the [Base network](https://base.org/).
 
 ```bash
 # Clone the repository
-git clone https://github.com/yourusername/rehook
-cd rehook
+git clone https://github.com/Hook-up-to-AMM/contract.git
+cd ./contract
 
 # Install dependencies
 forge install
