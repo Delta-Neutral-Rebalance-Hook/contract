@@ -217,11 +217,9 @@ contract ReHook is BaseTestHooks {
             s := mload(add(_signature, 64))
             v := byte(0, mload(add(_signature, 96)))
         }
-
         if (v < 27) {
             v += 27;
         }
-
         return ecrecover(_ethSignedMessageHash, v, r, s);
     }
 }
