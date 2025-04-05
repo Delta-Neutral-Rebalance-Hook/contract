@@ -88,52 +88,5 @@ contract testData{
         console2.log("user2Value", records[user2].value);
         console2.log("totalValue", totalValue); 
         console2.log("Accum", totalWeight);
-
-
-
-        // user2 deposits 15
-        // // user1 deposits 10
-        // uint256 user1Deposit = 10;
-        // updateAddressWeight(user1, timestamp, user1Deposit, true);
-        // updateTotalWeight(timestamp, user1Deposit, true);
-        // console2.log("user1DepositValue", records[user1].value);
-        // console2.log("totalValue", totalValue);
-
-        // timestamp = 3;
-        // uint256 user2Deposit = 15;
-        // updateAddressWeight(user2, timestamp, user2Deposit, true);
-        // updateTotalWeight(timestamp, user2Deposit, true);
-        // console2.log("user2DepositValue", records[user2].value);
-        // console2.log("totalValue", totalValue);
-        // console2.log("Accum", totalWeight);
-
-        // timestamp = 5;
-        // console2.log("timestamp", timestamp);
-        // uint256 user1Reward;
-        // user1Reward = updateAddressWeight(user1, timestamp, user1Deposit, true);
-        // updateTotalWeight(timestamp, user1Deposit, true);
-        // console2.log("totalValue", totalValue);
-        // console2.log("Accum", totalWeight);
-        // console2.log("user1Reward", user1Reward);
-        // console2.log("user1Value", records[user1].value);
-        // console2.log("user2Value", records[user2].value);
-        // // update
-        // totalWeight -= user1Reward;
-        // console2.log("Accum test", totalWeight);
-        // timestamp = 7;
-        //  console2.log("timestamp", timestamp);
-        // uint256 user2Reward;
-        // user2Reward = updateAddressWeight(user2, timestamp, user2Deposit, false);
-        // updateTotalWeight(timestamp, user2Deposit, false);
-        // totalWeight -= user2Reward;
-        // console2.log("totalValue", totalValue);
-        // console2.log("Accum", totalWeight);
-        // console2.log("user2Reward", user2Reward);
-
-
-
-
-
-
     }
 }

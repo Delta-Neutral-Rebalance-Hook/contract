@@ -107,7 +107,6 @@ contract ReHook is BaseTestHooks {
         BalanceDelta, /* feeDelta **/
         bytes calldata hookData /* hookData **/
     ) external override returns (bytes4, BalanceDelta) {
-
         bytes memory sig = hookData;
         bytes32 message = keccak256(abi.encode(key));
         address user = recoverSigner(message, sig);
@@ -119,8 +118,7 @@ contract ReHook is BaseTestHooks {
 
        (userReward0, userReward1) = updateAddressWeight(user, block.timestamp, amountCurrency0, amountCurrency1, true);
         updateTotalWeight(block.timestamp, amountCurrency0, amountCurrency1, true);
-        totalWeightCurrency0 -= userReward0;
-        totalWeightCurrency1 -= userReward1;
+        
         if(userReward0!=0 && totalWeightCurrency0!=0 && IERC20(Currency.unwrap(key.currency0)).balanceOf(address(this))!=0){ 
             uint256 totalReward0 = userReward0*IERC20(Currency.unwrap(key.currency0)).balanceOf(address(this))/totalWeightCurrency0;
             IERC20(Currency.unwrap(key.currency0)).transfer(user, totalReward0);
@@ -129,6 +127,8 @@ contract ReHook is BaseTestHooks {
             uint256 totalReward1 = userReward1*IERC20(Currency.unwrap(key.currency1)).balanceOf(address(this))/totalWeightCurrency1;
             IERC20(Currency.unwrap(key.currency1)).transfer(user, totalReward1);
         }
+        totalWeightCurrency0 -= userReward0;
+        totalWeightCurrency1 -= userReward1;
 
         return (IHooks.afterAddLiquidity.selector, BalanceDeltaLibrary.ZERO_DELTA);
     }
@@ -145,16 +145,15 @@ contract ReHook is BaseTestHooks {
         bytes memory sig = hookData;
         bytes32 message = keccak256(abi.encode(key));
         address user = recoverSigner(message, sig);
-        uint256 amountCurrency0 = uint256(int256(-BalanceDeltaLibrary.amount0(delta)));
-        uint256 amountCurrency1 = uint256(int256(-BalanceDeltaLibrary.amount1(delta)));
+        uint256 amountCurrency0 = uint256(int256(BalanceDeltaLibrary.amount0(delta)));
+        uint256 amountCurrency1 = uint256(int256(BalanceDeltaLibrary.amount1(delta)));
 
         uint256 userReward0;
         uint256 userReward1;
 
         (userReward0, userReward1) = updateAddressWeight(user, block.timestamp, amountCurrency0, amountCurrency1, false);
         updateTotalWeight(block.timestamp, amountCurrency0, amountCurrency1, false);
-        totalWeightCurrency0 -= userReward0;
-        totalWeightCurrency1 -= userReward1;
+        
         if(userReward0!=0 && totalWeightCurrency0!=0 && IERC20(Currency.unwrap(key.currency0)).balanceOf(address(this))!=0){ 
             uint256 totalReward0 = userReward0*IERC20(Currency.unwrap(key.currency0)).balanceOf(address(this))/totalWeightCurrency0;
             IERC20(Currency.unwrap(key.currency0)).transfer(user, totalReward0);
@@ -163,6 +162,8 @@ contract ReHook is BaseTestHooks {
             uint256 totalReward1 = userReward1*IERC20(Currency.unwrap(key.currency1)).balanceOf(address(this))/totalWeightCurrency1;
             IERC20(Currency.unwrap(key.currency1)).transfer(user, totalReward1);
         }
+        totalWeightCurrency0 -= userReward0;
+        totalWeightCurrency1 -= userReward1;
 
         return (IHooks.afterRemoveLiquidity.selector, BalanceDeltaLibrary.ZERO_DELTA);
     }

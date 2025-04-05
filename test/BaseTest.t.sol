@@ -54,7 +54,7 @@ contract ReHookTest is Test, Deployers {
         _setApprovalsFor(user4, address(Currency.unwrap(key.currency0)));
         _setApprovalsFor(user4, address(Currency.unwrap(key.currency1)));
     }
-    function testHook() public {
+    function testBaseHook() public {
 
         address impl = address(new ReHook(manager));
         address hookAddr = address(uint160(Hooks.AFTER_REMOVE_LIQUIDITY_FLAG|Hooks.AFTER_ADD_LIQUIDITY_RETURNS_DELTA_FLAG|Hooks.AFTER_ADD_LIQUIDITY_FLAG| Hooks.BEFORE_SWAP_FLAG | Hooks.BEFORE_SWAP_RETURNS_DELTA_FLAG));
@@ -154,25 +154,6 @@ contract ReHookTest is Test, Deployers {
 
         vm.stopPrank();
 
-
-        
-        // modifyLiquidityRouter.modifyLiquidity(key, params, hookData, false, true);
-
-
-        // bool zeroForOne = false;
-        // uint256 amountToSwap = 1e4;
-        // int256 amountSpecified = int256(amountToSwap);
-        // // key.currency0.transfer(address(hook), 10e18);
-        // // key.currency1.transfer(address(hook), 10e18);
-        // console2.log("Before swap");
-        // console2.log("user balance", MockERC20(Currency.unwrap(key.currency0)).balanceOf(user));
-        // console2.log("user balance", MockERC20(Currency.unwrap(key.currency1)).balanceOf(user));
-        // console2.log("hook balance", MockERC20(Currency.unwrap(key.currency0)).balanceOf(hook));
-        // console2.log("hook balance", MockERC20(Currency.unwrap(key.currency1)).balanceOf(hook));
-        // console2.log("user:", user);
-        // // console2.log("After swap);
-        // console2.log("user balance", MockERC20(Currency.unwrap(key.currency0)).balanceOf(user));
-        // console2.log("user balance", MockERC20(Currency.unwrap(key.currency1)).balanceOf(user));
         console2.log("hook balance", MockERC20(Currency.unwrap(key.currency0)).balanceOf(hook));
         console2.log("hook balance", MockERC20(Currency.unwrap(key.currency1)).balanceOf(hook));
     }

@@ -94,41 +94,5 @@ contract testData is Test{
         assertEq(user1Reward1, 36000);
         console2.log("Accum", totalWeightCurrency0);
         console2.log("Accum", totalWeightCurrency1);
-
-        // console2.log("user1Reward", user1Reward);
-        // console2.log("user1Value", records[user1].value);
-        // console2.log("totalValue", totalValue); 
-        // console2.log("Accum", totalWeight);
-        // timestamp = 3;
-        // console2.log("time:", timestamp);
-        // uint256 user2Deposit = 15;
-        // uint256 user2Reward;
-        // user2Reward = updateAddressWeight(user2, timestamp, user2Deposit, true);
-        // updateTotalWeight(timestamp, user2Deposit, true);
-        // totalWeight -= user2Reward;
-        // console2.log("user2Reward", user2Reward);
-        // console2.log("user2Value", records[user2].value);
-        // console2.log("totalValue", totalValue); 
-        // console2.log("Accum", totalWeight);
-        // timestamp = 5;
-        // console2.log("time:", timestamp);
-        // user1Deposit = 10;
-        // user1Reward = updateAddressWeight(user1, timestamp, user1Deposit, true);
-        // updateTotalWeight(timestamp, user1Deposit, true);
-        // totalWeight -= user1Reward;
-        // console2.log("user1Reward", user1Reward);
-        // console2.log("user1Value", records[user1].value);
-        // console2.log("totalValue", totalValue); 
-        // console2.log("Accum", totalWeight);
-        // timestamp = 7;
-        // console2.log("time:", timestamp);
-        // user2Deposit = 15;
-        // user2Reward = updateAddressWeight(user2, timestamp, user2Deposit, false);
-        // updateTotalWeight(timestamp, user2Deposit, false);
-        // totalWeight -= user2Reward;
-        // console2.log("user2Reward", user2Reward);
-        // console2.log("user2Value", records[user2].value);
-        // console2.log("totalValue", totalValue); 
-        // console2.log("Accum", totalWeight);
     }
 }

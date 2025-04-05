@@ -74,30 +74,30 @@ contract ReHookTest is Test, Deployers {
             salt: 0
         });
         // test3 for adding liquidity
-        IPoolManager.ModifyLiquidityParams memory AL3params = IPoolManager.ModifyLiquidityParams({ // 5*1e17
+        IPoolManager.ModifyLiquidityParams memory AL3params = IPoolManager.ModifyLiquidityParams({ // -5*1e17
             tickLower: TickMath.MIN_TICK,
             tickUpper: TickMath.MAX_TICK,
-            liquidityDelta: 5*1e17,
+            liquidityDelta: -5*1e17,
             salt: 0
         });
         // test4 for adding liquidity
-        IPoolManager.ModifyLiquidityParams memory AL4params = IPoolManager.ModifyLiquidityParams({ // 6*1e5
+        IPoolManager.ModifyLiquidityParams memory AL4params = IPoolManager.ModifyLiquidityParams({ // -6*1e7
             tickLower: TickMath.MIN_TICK,
             tickUpper: TickMath.MAX_TICK,
-            liquidityDelta: 6*1e5,
+            liquidityDelta: -6*1e7,
             salt: 0
         });
 
         // test1 for beforeSwap
         IPoolManager.SwapParams memory SW1params = IPoolManager.SwapParams({
             zeroForOne: false,
-            amountSpecified: 1e3,
+            amountSpecified: 1e10,
             sqrtPriceLimitX96: false ? MIN_PRICE_LIMIT : MAX_PRICE_LIMIT
         });
         // test2 for beforeSwap
         IPoolManager.SwapParams memory SW2params = IPoolManager.SwapParams({
             zeroForOne: true,
-            amountSpecified: 1e5,
+            amountSpecified: 1e9,
             sqrtPriceLimitX96: true ? MIN_PRICE_LIMIT : MAX_PRICE_LIMIT
         });
 
@@ -120,13 +120,13 @@ contract ReHookTest is Test, Deployers {
             vm.warp(block.timestamp + 1 hours);
             IPoolManager.SwapParams memory SWparams = IPoolManager.SwapParams({
                 zeroForOne: true,
-                amountSpecified: i*1e5,
+                amountSpecified: i*1e9,
                 sqrtPriceLimitX96: true ? MIN_PRICE_LIMIT : MAX_PRICE_LIMIT
             });
             swapRouter.swap(key, SWparams, _defaultTestSettings(), ZERO_BYTES);
         }
         // checek the hook balance
-        assertEq(MockERC20(Currency.unwrap(key.currency0)).balanceOf(hook), 46*1e3); // 46 = 1+1+2+3+4+5+6+7+8+9
+        assertEq(MockERC20(Currency.unwrap(key.currency0)).balanceOf(hook), 46*1e7); // 46 = 1+1+2+3+4+5+6+7+8+9
         vm.stopPrank();
 
         vm.startPrank(user2);
@@ -143,7 +143,7 @@ contract ReHookTest is Test, Deployers {
         uint256 hookBalanceBeforeClaim1 = MockERC20(Currency.unwrap(key.currency1)).balanceOf(hook);
         vm.warp(block.timestamp + 4 hours);
         printlog();
-        modifyLiquidityRouter.modifyLiquidity(key, AL1params, hookData, false, true);
+        modifyLiquidityRouter.modifyLiquidity(key, AL2params, hookData, false, true);
         uint256 hookBalanceAfterClaim0 = MockERC20(Currency.unwrap(key.currency0)).balanceOf(hook);
         uint256 hookBalanceAfterClaim1 = MockERC20(Currency.unwrap(key.currency1)).balanceOf(hook);
         vm.warp(block.timestamp + 5 hours);
@@ -151,9 +151,64 @@ contract ReHookTest is Test, Deployers {
         assertGt(hookBalanceBeforeClaim0, hookBalanceAfterClaim0);
         assertGt(hookBalanceBeforeClaim1, hookBalanceAfterClaim1);
         vm.warp(block.timestamp + 6 hours);
-        swapRouter.swap(key, SW2params, _defaultTestSettings(), ZERO_BYTES);
+        printlog();
         swapRouter.swap(key, SW2params, _defaultTestSettings(), ZERO_BYTES);
         vm.warp(block.timestamp + 7 hours);
+        printlog();
+        
+        vm.stopPrank();
+
+        vm.startPrank(user1);
+        userPrivateKey = 1;
+        (v, r, s) = vm.sign(userPrivateKey, message);
+        signature = abi.encodePacked(bytes32(r), bytes32(s), uint8(v));
+        hookData = signature;
+
+        modifyLiquidityRouter.modifyLiquidity(key, AL2params, hookData, false, true);
+        vm.warp(block.timestamp + 8 hours);
+        printlog();
+        hookBalanceBeforeClaim0 = MockERC20(Currency.unwrap(key.currency0)).balanceOf(hook);
+        hookBalanceBeforeClaim1 = MockERC20(Currency.unwrap(key.currency1)).balanceOf(hook);
+        vm.warp(block.timestamp + 9 hours);
+        printlog();
+        modifyLiquidityRouter.modifyLiquidity(key, AL1params, hookData, false, true);
+        hookBalanceAfterClaim0 = MockERC20(Currency.unwrap(key.currency0)).balanceOf(hook);
+        hookBalanceAfterClaim1 = MockERC20(Currency.unwrap(key.currency1)).balanceOf(hook);
+        vm.warp(block.timestamp + 10 hours);
+        printlog();
+        assertGt(hookBalanceBeforeClaim0, hookBalanceAfterClaim0);
+        assertGt(hookBalanceBeforeClaim1, hookBalanceAfterClaim1);
+        vm.warp(block.timestamp + 11 hours);
+        printlog();
+        swapRouter.swap(key, SW2params, _defaultTestSettings(), ZERO_BYTES);
+        vm.warp(block.timestamp + 12 hours);
+        printlog();
+        
+        vm.stopPrank();
+
+        vm.startPrank(user2);
+        userPrivateKey = 2;
+        (v, r, s) = vm.sign(userPrivateKey, message);
+        signature = abi.encodePacked(bytes32(r), bytes32(s), uint8(v));
+        hookData = signature;
+        vm.warp(block.timestamp + 13 hours);
+        printlog();
+        modifyLiquidityRouter.modifyLiquidity(key, AL3params, hookData, false, true);
+        vm.warp(block.timestamp + 14 hours);
+        printlog();
+        hookBalanceBeforeClaim0 = MockERC20(Currency.unwrap(key.currency0)).balanceOf(hook);
+        hookBalanceBeforeClaim1 = MockERC20(Currency.unwrap(key.currency1)).balanceOf(hook);
+        vm.warp(block.timestamp + 15 hours);
+        printlog();
+        modifyLiquidityRouter.modifyLiquidity(key, AL4params, hookData, false, true);
+        hookBalanceAfterClaim0 = MockERC20(Currency.unwrap(key.currency0)).balanceOf(hook);
+        hookBalanceAfterClaim1 = MockERC20(Currency.unwrap(key.currency1)).balanceOf(hook);
+        vm.warp(block.timestamp + 16 hours);
+        printlog();
+        assertGt(hookBalanceBeforeClaim0, hookBalanceAfterClaim0);
+        assertGt(hookBalanceBeforeClaim1, hookBalanceAfterClaim1);
+        vm.warp(block.timestamp + 17 hours);
+        printlog();
         
         vm.stopPrank();
 
