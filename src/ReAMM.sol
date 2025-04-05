@@ -20,18 +20,42 @@ contract ReAMM is ReAMMERC20 {
         _;
     }
     uint256 public constant MINIMUM_LIQUIDITY = 1000;
-    uint256 private reserve0;           // save slot
+    // all liquidity (100%)
+    uint256 private reserve0;
     uint256 private reserve1;
+    // liquidity in the pool (38%)
+    uint256 private reserve0inPool;          
+    uint256 private reserve1inPool;
 
-    uint private unlocked = 1;
+    uint256 private constant RATIO = 38; // 38%
+
+    uint256 private unlocked = 1;
     modifier lock() {
-        require(unlocked == 1, 'UniswapV2: LOCKED');
+        require(unlocked == 1, 'LOCKED');
         unlocked = 0;
         _;
         unlocked = 1;
     }
     event Mint(address indexed sender, uint amount0, uint amount1);
     event Burn(address indexed sender, uint amount0, uint amount1, address indexed to);
+
+    function rebalance() internal{
+
+        // transfer out token
+        // 38% in pool
+        // 62% out of pool
+        // positive -> out; negative -> back to pool
+        int256 amount0 = int256(reserve0inPool)-int256(reserve0*RATIO/100);
+        int256 amount1 = int256(reserve1inPool)-int256(reserve1*RATIO/100);
+        
+
+
+        // after rebalance
+        reserve0inPool = IERC20(token0).balanceOf(address(this));
+        reserve0inPool = IERC20(token1).balanceOf(address(this));
+        
+    }
+
     function addliquidity(uint256 amount0, uint256 amount1) external{
         require(amount0 > 0 && amount1 > 0, 'REQUIRES_MORE_LIQUIDITY');
         IERC20(token0).transferFrom(msg.sender, address(this), amount0);
@@ -45,12 +69,11 @@ contract ReAMM is ReAMMERC20 {
         balanceOf[msg.sender] -= amount;
         burn(msg.sender);
     }
-
     function mint(address to) internal lock returns (uint liquidity) {
         uint256 balance0 = IERC20(token0).balanceOf(address(this));
         uint256 balance1 = IERC20(token1).balanceOf(address(this));
-        uint256 amount0 = balance0 - reserve0;
-        uint256 amount1 = balance1 - reserve1;
+        uint256 amount0 = balance0 - reserve0inPool;
+        uint256 amount1 = balance1 - reserve1inPool;
         if (totalSupply == 0) {
             liquidity = Math.sqrt(amount0*amount1)-MINIMUM_LIQUIDITY;
            _mint(address(0), MINIMUM_LIQUIDITY);
@@ -60,16 +83,16 @@ contract ReAMM is ReAMMERC20 {
         require(liquidity > 0, 'REQUIRES_MORE_LIQUIDITY');
         _mint(to, liquidity);
 
-        reserve0 = uint256(balance0);
-        reserve1 = uint256(balance1);
+        reserve0inPool = uint256(balance0);
+        reserve1inPool = uint256(balance1);
     }
     function burn(address to) internal lock returns (uint amount0, uint amount1) {
-        uint balance0 = IERC20(token0).balanceOf(address(this));
-        uint balance1 = IERC20(token1).balanceOf(address(this));
-        uint liquidity = balanceOf[address(this)];
+        uint256 balance0 = IERC20(token0).balanceOf(address(this));
+        uint256 balance1 = IERC20(token1).balanceOf(address(this));
+        uint256 liquidity = balanceOf[address(this)];
 
-        amount0 = liquidity*balance0 / totalSupply;
-        amount1 = liquidity*balance1 / totalSupply;
+        amount0 = liquidity*reserve0 / totalSupply;
+        amount1 = liquidity*reserve1 / totalSupply;
         require(amount0 > 0 && amount1 > 0, 'REQUIRES_MORE_LIQUIDITY_TO_BURN');
         _burn(address(this), liquidity);
         IERC20(token0).transfer(to, amount0);
@@ -78,8 +101,8 @@ contract ReAMM is ReAMMERC20 {
         balance0 = IERC20(token0).balanceOf(address(this));
         balance1 = IERC20(token1).balanceOf(address(this));
 
-        reserve0 = uint256(balance0);
-        reserve1 = uint256(balance1);
+        reserve0inPool = uint256(balance0);
+        reserve1inPool = uint256(balance1);
         emit Burn(msg.sender, amount0, amount1, to);
     }
     event Swap(
