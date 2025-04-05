@@ -13,6 +13,7 @@ import {BaseTestHooks} from "v4-core/src/test/BaseTestHooks.sol";
 import {Currency} from "v4-core/src/types/Currency.sol";
 import {console2} from "forge-std/console2.sol";
 import {MockERC20} from "solmate/src/test/utils/mocks/MockERC20.sol";
+import {LiquidityAmounts} from "v4-periphery/src/libraries/LiquidityAmounts.sol";
 
 
 contract ReHook is BaseTestHooks {
@@ -20,40 +21,60 @@ contract ReHook is BaseTestHooks {
     using Hooks for IHooks;
     using CurrencySettler for Currency;
 
+    // address user = address(0xBEEF);
     struct Data {
         uint256 timestamp;
         uint256 value;
     }
-    mapping(address => Data) public records;
+    mapping(address => Data) public recordsCurrency0;
+    mapping(address => Data) public recordsCurrency1;
     uint256 public lastTimestamp; // last update timestamp
-    uint256 public totalWeight; // total weight
-    uint256 public totalValue; // total liquidity value
+    uint256 public totalWeightCurrency0; // total Currency0 weight
+    uint256 public totalWeightCurrency1; // total Currency1 weight
+
+    uint256 public totalValueCurrency0; // total Currency0 liquidity value
+    uint256 public totalValueCurrency1; // total Currency1 liquidity value
+
     
-    function updateTotalWeight(uint256 timestamp, uint256 updateValue, bool Add) external {
-        totalWeight += totalValue*(timestamp - lastTimestamp);
+    function updateTotalWeight(uint256 timestamp, uint256 updateValue0, uint256 updateValue1, bool Add) internal {
+        totalWeightCurrency0 += totalValueCurrency0*(timestamp - lastTimestamp);
+        totalWeightCurrency1 += totalValueCurrency1*(timestamp - lastTimestamp);
         if(Add){
-            totalValue += updateValue;
+            totalValueCurrency0 += updateValue0;
+            totalValueCurrency1 += updateValue1;
         } else {
-            totalValue -= updateValue;
+            totalValueCurrency0 -= updateValue0;
+            totalValueCurrency1 -= updateValue1;
         }
         lastTimestamp = timestamp;
     }
     // address[] public keys;
-    function updateAddressWeight(address sender, uint256 timestamp, uint256 updateValue) external returns(uint256){
-        if(records[sender].timestamp == 0) {
-            Data storage data = records[sender];
-            data.timestamp = timestamp;
-            data.value += updateValue;
-            lastTimestamp = timestamp;
-            return(0);
+    function updateAddressWeight(address sender, uint256 timestamp, uint256 updateValue0, uint256 updateValue1, bool ADD) internal returns(uint256, uint256){
+        if(recordsCurrency0[sender].timestamp == 0) {
+            Data storage data0 = recordsCurrency0[sender];
+            data0.timestamp = timestamp;
+            data0.value += updateValue0;
+            Data storage data1 = recordsCurrency1[sender];
+            data1.timestamp = timestamp;
+            data1.value += updateValue1;
+            return(0, 0);
         }else{
-            Data storage data = records[sender];
-            data.timestamp = timestamp;
-            data.value = updateValue;
-            return(data.value*(timestamp - data.timestamp));
+            Data storage data0 = recordsCurrency0[sender];
+            Data storage data1 = recordsCurrency1[sender];
+            uint256 reward0 = data0.value*(timestamp - data0.timestamp);
+            uint256 reward1 = data1.value*(timestamp - data1.timestamp);
+            data0.timestamp = timestamp;
+            data1.timestamp = timestamp;
+            if(ADD){
+                data0.value += updateValue0;
+                data1.value += updateValue1;
+            } else {
+                data0.value -= updateValue0;
+                data1.value -= updateValue1;
+            }
+            return(reward0, reward1);
         }
     }
-
 
     IPoolManager immutable manager;
 
@@ -120,6 +141,20 @@ contract ReHook is BaseTestHooks {
         bytes32 message = keccak256(abi.encode(key));
         address user = recoverSigner(message, sig);
         console2.log("user address check: ", user);
+
+        
+
+
+        // uint256 userDeposit = 10;
+        // uint256 userReward;
+        // userReward = updateAddressWeight(user, block.timestamp(), userDeposit, true);
+        // updateTotalWeight(block.timestamp(), userDeposit, true);
+        // totalWeight -= user1Reward;
+        // if(user1Reward!=0){
+            
+        // }
+
+
 
         return (IHooks.afterAddLiquidity.selector, hookDelta);
     }
