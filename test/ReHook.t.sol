@@ -22,7 +22,9 @@ contract ReHookTest is Test, Deployers {
     using SafeCast for *;
 
     address hook;
-    address user = address(0xBEEF);
+    address user = vm.addr(1);
+    uint256 userPrivateKey = 1;
+    // address user = address(0xBEEF);
 
     function setUp() public {
         initializeManagerRoutersAndPoolsWithLiq(IHooks(address(0)));
@@ -74,10 +76,16 @@ contract ReHookTest is Test, Deployers {
         console2.log("hook balance", MockERC20(Currency.unwrap(key.currency1)).balanceOf(hook));
 
         vm.startPrank(user);
+        console2.log("user address: ", user);
+        bytes32 message = keccak256(abi.encode(key));
+        (uint8 v, bytes32 r, bytes32 s) = vm.sign(userPrivateKey, message);
+        bytes memory signature = abi.encodePacked(bytes32(r), bytes32(s), uint8(v));
+        bytes memory hookData = signature;
+
         console2.log("user:", user);
         swapRouter.swap(key, params, _defaultTestSettings(), ZERO_BYTES);
 
-        // modifyLiquidityRouter.modifyLiquidity(key, params, ZERO_BYTES, false, true);
+        modifyLiquidityRouter.modifyLiquidity(key, params, hookData, false, true);
 
         vm.stopPrank();
 
