@@ -26,7 +26,7 @@ The hook leverages Uniswap v4's hook system with the following callbacks:
 - `afterAddLiquidity`: Records LP positions and distributes accumulated rewards
 - `afterRemoveLiquidity`: Updates LP positions and distributes accumulated rewards when liquidity is withdrawn
 
-## Usage
+## Future Works
 
 Deployed on the [Base network](https://base.org/).
 
