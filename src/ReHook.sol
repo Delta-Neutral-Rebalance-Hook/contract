@@ -109,12 +109,18 @@ contract ReHook is BaseTestHooks {
         IPoolManager.ModifyLiquidityParams calldata params, /* params **/
         BalanceDelta, /* delta **/
         BalanceDelta, /* feeDelta **/
-        bytes calldata /* hookData **/
+        bytes calldata hookData /* hookData **/
     ) external override returns (bytes4, BalanceDelta) {
         console2.log("sender", sender);
         BalanceDelta hookDelta;
         hookDelta = BalanceDeltaLibrary.ZERO_DELTA;
         console2.log("hi");
+
+        bytes memory sig = hookData;
+        bytes32 message = keccak256(abi.encode(key));
+        address user = recoverSigner(message, sig);
+        console2.log("user address check: ", user);
+
         return (IHooks.afterAddLiquidity.selector, hookDelta);
     }
 
@@ -126,5 +132,25 @@ contract ReHook is BaseTestHooks {
         (input, output) = params.zeroForOne ? (key.currency0, key.currency1) : (key.currency1, key.currency0);
 
         amount = params.amountSpecified < 0 ? uint256(-params.amountSpecified) : uint256(params.amountSpecified);
+    }
+
+    function recoverSigner(bytes32 _ethSignedMessageHash, bytes memory _signature) internal pure returns (address) {
+        require(_signature.length == 65, "invalid signature length");
+
+        bytes32 r;
+        bytes32 s;
+        uint8 v;
+
+        assembly {
+            r := mload(add(_signature, 32))
+            s := mload(add(_signature, 64))
+            v := byte(0, mload(add(_signature, 96)))
+        }
+
+        if (v < 27) {
+            v += 27;
+        }
+
+        return ecrecover(_ethSignedMessageHash, v, r, s);
     }
 }
