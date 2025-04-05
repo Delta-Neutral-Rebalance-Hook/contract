@@ -37,6 +37,17 @@ contract ReHook is BaseTestHooks {
     uint256 public totalValueCurrency0; // total Currency0 liquidity value
     uint256 public totalValueCurrency1; // total Currency1 liquidity value
 
+    IPoolManager immutable manager;
+
+    constructor(IPoolManager _manager) {
+        manager = _manager;
+    }
+
+    modifier onlyPoolManager() {
+        require(msg.sender == address(manager));
+        _;
+    }
+
     function updateTotalWeight(uint256 timestamp, uint256 updateValue0, uint256 updateValue1, bool ADD) internal {
         totalWeightCurrency0 += totalValueCurrency0 * (timestamp - lastTimestamp);
         totalWeightCurrency1 += totalValueCurrency1 * (timestamp - lastTimestamp);
@@ -77,16 +88,6 @@ contract ReHook is BaseTestHooks {
         }
     }
 
-    IPoolManager immutable manager;
-
-    constructor(IPoolManager _manager) {
-        manager = _manager;
-    }
-
-    modifier onlyPoolManager() {
-        require(msg.sender == address(manager));
-        _;
-    }
     function beforeSwap(
         address, /* sender **/
         PoolKey calldata key,
@@ -96,27 +97,12 @@ contract ReHook is BaseTestHooks {
         
         (Currency inputCurrency, Currency outputCurrency, uint256 amount) = _getInputOutputAndAmount(key, params);
 
-        manager.take(inputCurrency, address(this), amount/100);// manager transfer to hook
+        manager.take(inputCurrency, address(this), amount/100); // manager transfer to hook
 
         BeforeSwapDelta hookDelta = toBeforeSwapDelta(0, int128(params.amountSpecified/100));
         return (IHooks.beforeSwap.selector, hookDelta, 0);
     }
-    function beforeInitialize(
-        address sender, 
-        PoolKey calldata key,
-        uint160 sqrtPriceX96
-    ) external override onlyPoolManager returns (bytes4)
-    {
-        return IHooks.beforeInitialize.selector;
-    }
-    function beforeRemoveLiquidity(
-        address, /* sender **/
-        PoolKey calldata, /* key **/
-        IPoolManager.ModifyLiquidityParams calldata, /* params **/
-        bytes calldata /* hookData **/
-    ) external override returns (bytes4) {
-        return IHooks.beforeRemoveLiquidity.selector;
-    }
+
     function afterAddLiquidity(
         address sender, /* sender **/
         PoolKey calldata key, /* key **/
@@ -131,9 +117,6 @@ contract ReHook is BaseTestHooks {
         address user = recoverSigner(message, sig);
         uint256 amountCurrency0 = uint256(int256(-BalanceDeltaLibrary.amount0(delta)));
         uint256 amountCurrency1 = uint256(int256(-BalanceDeltaLibrary.amount1(delta)));
-
-        // console2.log("amountCurrency0", amountCurrency0);
-        // console2.log("amountCurrency1", amountCurrency1);
 
         uint256 userReward0;
         uint256 userReward1;
@@ -161,6 +144,7 @@ contract ReHook is BaseTestHooks {
         BalanceDelta, /* feeDelta **/
         bytes calldata hookData /* hookData **/
     ) external override returns (bytes4, BalanceDelta) {
+
         bytes memory sig = hookData;
         bytes32 message = keccak256(abi.encode(key));
         address user = recoverSigner(message, sig);
@@ -183,10 +167,10 @@ contract ReHook is BaseTestHooks {
             IERC20(Currency.unwrap(key.currency1)).transfer(user, totalReward1);
         }
 
-
         return (IHooks.afterRemoveLiquidity.selector, BalanceDeltaLibrary.ZERO_DELTA);
     }
 
+    // HELPER FUNCTIONS
     function _getInputOutputAndAmount(PoolKey calldata key, IPoolManager.SwapParams calldata params)
         internal
         pure
