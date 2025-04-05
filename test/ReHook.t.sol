@@ -31,7 +31,7 @@ contract ReHookTest is Test, Deployers {
     function testRehook() public {
 
         address impl = address(new ReHook(manager));
-        address hookAddr = address(uint160(Hooks.AFTER_ADD_LIQUIDITY_RETURNS_DELTA_FLAG|Hooks.AFTER_ADD_LIQUIDITY_FLAG|Hooks.BEFORE_INITIALIZE_FLAG | Hooks.BEFORE_SWAP_FLAG | Hooks.BEFORE_SWAP_RETURNS_DELTA_FLAG));
+        address hookAddr = address(uint160(Hooks.AFTER_REMOVE_LIQUIDITY_FLAG|Hooks.AFTER_REMOVE_LIQUIDITY_RETURNS_DELTA_FLAG|Hooks.AFTER_ADD_LIQUIDITY_RETURNS_DELTA_FLAG|Hooks.AFTER_ADD_LIQUIDITY_FLAG|Hooks.BEFORE_INITIALIZE_FLAG | Hooks.BEFORE_SWAP_FLAG | Hooks.BEFORE_SWAP_RETURNS_DELTA_FLAG));
         _etchHookAndInitPool(hookAddr, impl);
         console2.log("hookAddr", hookAddr);
         console2.log("impl", impl);
@@ -42,21 +42,21 @@ contract ReHookTest is Test, Deployers {
         IPoolManager.ModifyLiquidityParams memory params = IPoolManager.ModifyLiquidityParams({
             tickLower: TickMath.MIN_TICK,
             tickUpper: TickMath.MAX_TICK,
-            liquidityDelta: 1e18,
+            liquidityDelta: 1e6,
             salt: 0
         });
 
         // test for beforeSwap
 
-        // bool zeroForOne = false;
-        // uint256 amountToSwap = 1e6;
-        // int256 amountSpecified = int256(amountToSwap);
+        bool zeroForOne = false;
+        uint256 amountToSwap = 1e4;
+        int256 amountSpecified = int256(amountToSwap);
 
-        // IPoolManager.SwapParams memory params = IPoolManager.SwapParams({
-        //     zeroForOne: zeroForOne,
-        //     amountSpecified: amountSpecified,
-        //     sqrtPriceLimitX96: zeroForOne ? MIN_PRICE_LIMIT : MAX_PRICE_LIMIT
-        // });
+        IPoolManager.SwapParams memory sparams = IPoolManager.SwapParams({
+            zeroForOne: zeroForOne,
+            amountSpecified: amountSpecified,
+            sqrtPriceLimitX96: zeroForOne ? MIN_PRICE_LIMIT : MAX_PRICE_LIMIT
+        });
 
         _setApprovalsFor(user, address(Currency.unwrap(key.currency0)));
         _setApprovalsFor(user, address(Currency.unwrap(key.currency1)));
@@ -79,9 +79,11 @@ contract ReHookTest is Test, Deployers {
         bytes memory hookData = signature;
 
         console2.log("user:", user);
-        // swapRouter.swap(key, params, _defaultTestSettings(), ZERO_BYTES);
 
         modifyLiquidityRouter.modifyLiquidity(key, params, hookData, false, true);
+        swapRouter.swap(key, sparams, _defaultTestSettings(), ZERO_BYTES);
+        modifyLiquidityRouter.modifyLiquidity(key, params, hookData, false, true);
+
 
         vm.stopPrank();
 
