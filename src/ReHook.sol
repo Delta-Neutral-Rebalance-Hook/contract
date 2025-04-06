@@ -21,7 +21,7 @@ contract ReHook is BaseTestHooks {
 
     using Hooks for IHooks;
     using CurrencySettler for Currency;
-    uint256 constant BNOUSFEERATE = 100; // 1% bonus fee based on amountIn
+    int256 constant BNOUSFEERATE = 100; // 1% bonus fee based on amountIn
 
     struct Data {
         uint256 timestamp;
@@ -94,7 +94,7 @@ contract ReHook is BaseTestHooks {
         
         (Currency inputCurrency, Currency outputCurrency, uint256 amount) = _getInputOutputAndAmount(key, params);
 
-        manager.take(inputCurrency, address(this), amount/BNOUSFEERATE); // manager transfer to hook
+        manager.take(inputCurrency, address(this), amount/uint256(BNOUSFEERATE)); // manager transfer to hook
 
         BeforeSwapDelta hookDelta = toBeforeSwapDelta(0, int128(params.amountSpecified/BNOUSFEERATE));
         return (IHooks.beforeSwap.selector, hookDelta, 0);
